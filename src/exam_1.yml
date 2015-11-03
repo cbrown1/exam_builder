@@ -1,0 +1,132 @@
+# A yaml file to be processed with exam_builder.py
+
+include: [src/course.yml]
+
+date: March 17
+name: Unit 1 exam
+
+build:
+    # template: a dict in which the keys are the output file names and
+    # the vals are the input (template) filename. Replaces filename 
+    # and template string variables.
+    - template:
+        doc/Unit1_Exam: templates/mc_exam.template
+        doc/Unit1_Exam_key: templates/mc_key.template
+        pres/Unit1_Exam_review: templates/review_pres.template
+
+    # question_order: can be 'natural', 'random', a print-style string 
+    # ('1-5,7,10', make first item 'r' to randomize: 'r,5-10, 15-20'), 
+    # or the path to a text file with one integer per line. 
+    # Defaule = natural. Can be a list of the options above to make 
+    # multiple versions of a test.
+      question_order: random
+
+    # answer_order: can be either 'natural' 'random', or the path to a 
+    # text file, with an array of integers with dim1 = the number of 
+    # questions, and dim2 = the number of possible answers. If you  
+    # specify a list, it should be the same size as question_order. You
+    # can specify a string and if question_order is a list, the same 
+    # answer_order will be used for eacy.  
+    # Default = natural
+      answer_order: natural
+
+# A script or other function to call prior to processing. Useful for 
+# creating figures, etc.
+# 
+#preprocess: python2.7 src/Unit1_Preprocess.py
+#
+
+# Each item has one required parameter: 'question' which should be a string
+# Each item has one optional parameter of one of: "answer" | "answers" | ""
+# "answer" should be a yaml string. Item treated as short-answer; string 
+#           will show up on key but not on exam
+# "answers" should be a yaml list. Treated as multiple choice, with each 
+#           list item an option and the one prepended with a + is the
+#           correct answer (for the key). Example:
+#    - answer 1
+#    - answer 2
+#    - + answer 3 is correct
+#"": If neither answer nor answers is given, the item is treated as an essay 
+#    question, and no answer shows up on exam or key
+
+---
+# n is a custom parameter
+n: 1
+question: The Hundred Years War was fought between what two European countries? 
+answers:
+    - + England and France
+    - England and Spain
+    - France and Spain
+
+---
+n: 2
+question: What famous American was presented with the Medal of Freedom by President John F. Kennedy in 1963? 
+answers:
+    - + Ralph Bunche
+    - Thurgood Marshall
+    - Martin Luther King Jr.
+
+---
+n: 3
+question: According to the Old Testament, who was 100 years old when Isaac was born? (Genesis 21;5) 
+answers:
+    - + Abraham
+    - Isaac
+    - Moses
+
+---
+n: 4
+question: What group used the agricultural method of terracing in the Andes Mountains during the 15th century? 
+answers:
+    - Mayans
+    - Aztecs
+    - + Incas
+
+---
+n: 5
+question: The Aztec capital was founded around 1325 in central Mexico and was called what?  
+answers:
+    - Huitzilopochti
+    - Chiapas
+    - + Tenochtitlan
+
+---
+n: 6
+question: Which letter is used to represent 100 in Roman numerals? 
+answers:
+    - M
+    - + C
+    - D
+
+---
+n: 7
+question: During World War I, which country did South Africa capture?
+answers:
+    - Rwanda
+    - Zimbabwe
+    - + Namibia
+
+---
+n: 8
+question: During the Black Death, or Bubonic Plague, in mid 1300s Europe (approx.), what percentage of the population perished? 
+answers:
+    - One quarter
+    - + One third
+    - One half
+
+---
+n: 9
+question: Jupiter is named for which of the following greek gods?
+answers:
+    - + Zeus
+    - Hercules
+    - Apollo
+
+---
+n: 10
+question: In Decemeber of 1974, which Australian city was devasted by cyclone Tracy? 
+answers:
+    - + Darwin
+    - Townsville
+    - Cairns
+

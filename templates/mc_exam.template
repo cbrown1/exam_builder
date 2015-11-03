@@ -1,0 +1,15 @@
+**{{course}}, {{term}}**\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ V.{{version}}\
+Instructor: {{instructor}}\
+{{name}}, {{date}}
+
+{% set i_q = 1 -%}
+{% for q in questions -%}
+{{i_q}}. {{ q.question }}
+
+    {% for a in q.answers -%}
+    {{a.option}}. {{a.answer}}
+    {% endfor -%}
+    \
+{% set i_q = i_q + 1 -%}
+{% endfor -%}
+

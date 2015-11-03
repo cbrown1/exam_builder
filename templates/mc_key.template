@@ -1,0 +1,12 @@
+**{{course}}, {{term}}**\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ V.{{version}}\
+Instructor: {{instructor}}\
+{{name}}, {{date}}
+
+#Answer Key
+
+{% set i_q = 1 -%}
+{% for q in questions -%}
+{{i_q}}. {{ q.correct_option }}. {{ q.correct_answer }}
+{% set i_q = i_q + 1 -%}
+{% endfor -%}
+

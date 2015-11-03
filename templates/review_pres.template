@@ -1,0 +1,19 @@
+# {{course}}, {{term}}
+## Instructor: {{instructor}}
+## {{name}}, {{date}}
+## Version {{version}}
+
+{% set i_q = 1 -%}
+{% for q in questions -%}
+---
+# {{name}}
+
+{{i_q}}) {{ q.question }}
+
+--
+
+- {{ q.correct_answer }}
+
+{% set i_q = i_q + 1 -%}
+{% endfor -%}
+

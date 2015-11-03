@@ -1,0 +1,17 @@
+**{{course}}, {{term}}**\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ V.{{version}}\
+Instructor: {{instructor}}\
+{{name}}, {{date}}
+
+#Review Copy
+
+{% set i_q = 1 -%}
+{% for q in questions -%}
+{{i_q}}. {{ q.n_orig }}. {{ q.question }}
+
+    {% for a in q.answers -%}
+    {{a.option}}. {{a.answer_scored}}
+    {% endfor -%}
+    \
+{% set i_q = i_q + 1 -%}
+{% endfor -%}
+

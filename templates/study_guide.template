@@ -1,0 +1,23 @@
+**{{course}}, {{term}}**\
+Instructor: {{instructor}}\
+{{name}}, {{date}}
+
+{% set i_q = 1 -%}
+{% for q in questions -%}
+{{i_q}}. {{ q.question }}
+
+    {% for a in q.answers -%}
+    {{a.option}}. {{a.answer}}
+    {% endfor -%}
+    \hfill\break
+{% set i_q = i_q + 1 -%}
+{% endfor -%}
+\hfill\break
+\hfill\break
+##Answers:
+{% set i_q = 1 -%}
+{%- for q in questions -%}({{i_q}}. {{ q.correct_option }})|
+{%- set i_q = i_q + 1 -%}
+{% endfor -%}
+\hfill\break
+

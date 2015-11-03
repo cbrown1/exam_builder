@@ -4,14 +4,14 @@
 """exam_builder: Simple script to help building exams
 
     The usecase is large lecture courses where anything other than multiple-
-    choice exams is not feasible. In these cases, it is often desirable to have 
-    multiple versions of an exam, with both question order and multiple-choice 
-    answer order randomized, to minimize cheating. This is where this script 
-    can help. Questions are stored in a yml file, along with some additional 
-    variables to dictate what is build and how. Because it uses jinja2 
-    templating, your output file format can be whatever you want. But a good 
-    choice is to write to markdown files which can then be processed into pdfs  
-    with pandoc. 
+    choice exams is not feasible. In these cases, it is often desirable to have
+    multiple versions of an exam, with both question order and multiple-choice
+    answer order randomized, to minimize cheating. This is where this script
+    can help. Questions are stored in a yml file, along with some additional
+    variables to dictate what is build and how. Because it uses jinja2
+    templating, your output file format can be whatever you want. But a good
+    choice is to write to markdown files which can then be processed into pdfs
+    with pandoc.
 
 """
 
@@ -54,12 +54,16 @@ def process_questions(in_items):
         else:
             out_item['answer'] = ""
 
+        for key,val in in_item.iteritems():
+            if key not in ['question', 'answer', 'answers']:
+                out_item[key] = val
+
         out_items.append(out_item)
         question_i += 1
     return out_items
 
 def main(yaml_file, dest="."):
-    
+
     # Read in file. Take first section as yml block, everything else as questions
     raw = open(yaml_file, 'r').read()
     preamble = raw.split('---')[0]
@@ -68,6 +72,7 @@ def main(yaml_file, dest="."):
     items_list = list(yaml.load_all(body))
     questions = process_questions(items_list)
     context = {}
+    random_orders = {}
 
     # Process includes
     if 'include' in metadata.keys():
@@ -98,7 +103,7 @@ def main(yaml_file, dest="."):
     if 'preprocess' in metadata.keys() and metadata['preprocess'] is not None:
         do_log('running global preprocess stage: {}'.format(metadata['preprocess']))
         os.system(metadata['preprocess'])
-    
+
     # Loop through builds
     build_i = 0
     for build in metadata['build']:
@@ -130,7 +135,7 @@ def main(yaml_file, dest="."):
             out_questions = []
             question_order = version
             context['version'] = version_name
-            if version.lower() == 'natural':
+            if question_order.lower() == 'natural':
                 do_log("Build: {}, version: {}; Using natural question order".format(build_name, version_name))
                 question_order_n = np.arange(len(items_list))
             elif question_order.lower() == 'random':
@@ -142,7 +147,12 @@ def main(yaml_file, dest="."):
                 question_order_n = np.loadtxt(question_order, dtype=np.int32)
             else:
                 do_log("Build: {}, version: {}; Using specified question order: {}".format(build_name, version_name, question_order))
-                question_order_n = str_to_range(question_order)
+                question_order_n,store = str_to_range(question_order)
+                if store:
+                    if random_orders.has_key(store):
+                        question_order_n = random_orders[store]
+                    else:
+                        random_orders[store] = question_order_n
             if 0 not in question_order_n:
                 question_order_n = question_order_n - 1
 
@@ -173,6 +183,7 @@ def main(yaml_file, dest="."):
                     out_question['n'] = question_i + 1
                     out_question['n_orig'] = in_question['ind'] + 1
                     out_question['question'] = in_question['question']
+
                     out_answers = []
                     if in_question.has_key('answers'):
                         answer_i = 0
@@ -208,39 +219,37 @@ def main(yaml_file, dest="."):
                 question_i += 1
             context['questions'] = out_questions
 
-            ypath,yfname = os.path.split(yaml_file)
-            yfbase,yfext = os.path.splitext(yfname)
-            if 'filename' in build.keys():
-                context['filename'] = os.path.join(dest,"{}_v{:}.md".format(build['filename'], version_i))
-            else:
-                context['filename'] = os.path.join(dest,"{}_build{:}_v{:}.md".format(yfbase, build_i, version_i))
-            
-            if os.path.isfile(build['template']):
-                do_log("Build: {}, version: {}; Using template: {}".format(build_name, version_name, build['template']))
-                tpath,tfname = os.path.split(build['template'])
-                template_environment = jinja2.Environment(autoescape=False, 
-                                                            loader=jinja2.FileSystemLoader(tpath),
-                                                            trim_blocks=True, 
-                                                          )
+            for filename,template in build.get("template", []).iteritems():
+                context['filename'] = os.path.join(dest,"{}_v{:}.md".format(filename, version_i))
 
-                markdown = template_environment.get_template(tfname).render(context)
+                if os.path.isfile(template):
+                    do_log("Build: {}, version: {}; Using template: {}".format(build_name, version_name, template))
+                    tpath,tfname = os.path.split(template)
+                    template_environment = jinja2.Environment(autoescape=False,
+                                                                loader=jinja2.FileSystemLoader(tpath),
+                                                                trim_blocks=True,
+                                                              )
 
-                if build.has_key('appendix') and build['appendix'] is not None:
-                    do_log("Build: {}, version: {}; Adding appendix: {}".format(build_name, version_name, build['appendix']))
-                    appendix = open(build['appendix'], 'r').read()
-                    markdown += appendix
+                    markdown = template_environment.get_template(tfname).render(context)
 
-                markdown.decode('ascii')
+                    if build.has_key('appendix') and build['appendix'] is not None:
+                        do_log("Build: {}, version: {}; Adding appendix: {}".format(build_name, version_name, build['appendix']))
+                        appendix = open(build['appendix'], 'r').read()
+                        markdown += appendix
 
-                do_log("Build: {}, version: {}; Writing to md file: {}".format(build_name, version_name, context['filename']))
+                    markdown.decode('ascii')
 
-                if not os.path.exists(dest):
-                    os.makedirs(dest)
-                
-                with open(context['filename'], 'w') as f:
-                    f.write(markdown.encode('utf8'))
-            else:
-                raise IOError("Build: {}, version: {}; *** Template not found: {}".format(build_name, version_name, build['template']))
+                    do_log("Build: {}, version: {}; Writing to md file: {}".format(build_name, version_name, context['filename']))
+
+                    # Don't use dest, which allows filename to contain path info
+                    d = os.path.dirname(context['filename'])
+                    if not os.path.exists(d):
+                        os.makedirs(d)
+
+                    with open(context['filename'], 'w') as f:
+                        f.write(markdown.encode('utf8'))
+                else:
+                    raise IOError("Build: {}, version: {}; *** Template not found: {}".format(build_name, version_name, template))
 
             version_i += 1
 
@@ -260,13 +269,16 @@ def str_to_range(s):
     """
     s = s.strip()
     randomize = False
+    store = None
     if s.count(":"):
         tokens = [x.strip().split(":") for x in s.split(",")]
     else:
         tokens = [x.strip().split("-") for x in s.split(",")]
 
-    if tokens[0][0] in ["random","r","rand"]:
+    if tokens[0][0][0] == "r":
         randomize = True
+        if len(tokens[0][0]) > 1:
+            store = tokens[0][0][1:]
         tokens = tokens[1:]
 
     # Translate ranges and enumerations into a list of int indices.
@@ -288,9 +300,8 @@ def str_to_range(s):
     if randomize:
         np.random.shuffle(result)
 
-    return result
+    return result,store
 
-    
 def do_log(message):
     """Writes info to the console
     """
@@ -303,9 +314,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Simple script to help building exams")
     parser.add_argument("yaml_file", type=str,
                         help="the path to a yaml file representing exam data")
-    parser.add_argument("dest", type=str, default=".", 
+    parser.add_argument("dest", type=str, default=".",
                         help="output directory. default = current directory")
-    parser.add_argument("-log", "--log", action='store_true', default=False, 
+    parser.add_argument("-log", "--log", action='store_true', default=False,
                         help="turn on logging")
     args = parser.parse_args()
 
@@ -314,4 +325,3 @@ if __name__ == "__main__":
     log = args.log
 
     main(yaml_file, dest)
-

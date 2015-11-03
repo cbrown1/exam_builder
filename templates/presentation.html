@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% set title=title or "Presentation" %}
+    <title>{{title}}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    {% set html_head=html_head or "" %}
+    {{html_head}}
+  </head>
+  <body>
+    <textarea id="source">
+
+{{source}}
+
+    </textarea>
+    {% set html_foot=html_foot or "" %}
+    {{html_foot}}
+  </body>
+</html>
+
