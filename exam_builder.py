@@ -184,6 +184,10 @@ def main(yaml_file, dest="."):
                     out_question['n_orig'] = in_question['ind'] + 1
                     out_question['question'] = in_question['question']
 
+                    for key,val in in_question.iteritems():
+                        if key not in ['question', 'answer', 'answers']:
+                            out_question[key] = val
+
                     out_answers = []
                     if in_question.has_key('answers'):
                         answer_i = 0
@@ -254,6 +258,10 @@ def main(yaml_file, dest="."):
             version_i += 1
 
         build_i += 1
+
+    if 'postprocess' in metadata.keys() and metadata['postprocess'] is not None:
+        do_log('running global postprocess stage: {}'.format(metadata['postprocess']))
+        os.system(metadata['postprocess'])
 
 
 def str_to_range(s):
