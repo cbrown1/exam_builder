@@ -15,6 +15,39 @@
 
 """
 
+"""
+TODO: Move the entire build section out of the yaml header and to command 
+line input args. So the header should be just jinja2 vars, and there 
+should be an easy way to specify other vars as input args as well. 
+
+It should look something like:
+
+exam_builder -o doc/Unit5_Exam -t lib/templates/mc_exam.template -q build/q_order_v0.txt
+
+...etc.
+
+Remember to do something with the out dir. Right now, it is very Goldbergian, where
+out is specified in the makefile, but the subs are specified in the yaml. 
+
+Also, just remove preprocess, as it is unnecessary and cumbersome to call from within 
+exam_builder. Much better to just call the preprocess script from the makefile as needed. 
+"""
+
+"""
+TODO: Add topics feature, where each question can belong to one or more topics, 
+and then the user can specify which topics to include in an exam, and all of the 
+questions that belong to that topic will be included. Question order will probably 
+have to be improved concurrently.
+"""
+
+"""
+TODO: Improve question and answer order to be more robust, flexible, and intuitive. However,
+keep in mind that if the command-line design suggested above is implemented, persistent 
+q and a orders will not be necessary, since exam_builder will then only ever be aware of
+a single template at a time. So, maybe big changes here are not necessary. 
+"""
+
+
 import os
 import sys
 import argparse
@@ -333,3 +366,45 @@ if __name__ == "__main__":
     log = args.log
 
     main(yaml_file, dest)
+
+
+#    parser = argparse.ArgumentParser(description = "Simple script to help building exams")
+#    parser.add_argument("-y", "--yaml_file",
+#                        help="the path to a yaml file representing exam data")
+#
+#    parser.add_argument("-t", "--template", 
+#                        help="The template to use.")
+#
+#    parser.add_argument("-o", "--output_dir",
+#                        help="output directory.")
+#
+#    parser.add_argument("-q", "--question_order", default="None", 
+#                        help="A file indicating the question order.")
+#
+#    parser.add_argument("-a", "--answer_order", default="None", 
+#                        help="A file indicating the answer order.")
+#
+#    parser.add_argument("-v", "--variables", default="None", 
+#                        help="A comma-delimited list of variables, in the format var1:val1,var2:val2, etc..")
+#
+#    parser.add_argument("-log", "--log", action='store_true', default=False,
+#                        help="turn on logging")
+#
+#    args = parser.parse_args()
+#
+#    yaml_file = args.yaml_file
+#    template = args.template
+#    out = args.output_dir
+#    if args.question_order == 'None':
+#        q = None
+#    else:
+#        q = args.question_order
+#    if args.answer_order == 'None': 
+#        a = None
+#    else:
+#        a = args.answer_order
+#    if args.variables == 'None': 
+#        v = None
+#    else:
+#        v = args.variables
+#    log = args.log
