@@ -2,7 +2,7 @@ example:
 	$(eval unit=Unit1)
 	mkdir -p build
 	mkdir -p out/$(unit)
-	python exam_builder.py src/exam_1.yml build
+	python exam_builder3.py src/exam_2.yml build
 	for file in build/doc/$(unit)_Exam_*.md; do fname=$${file##*/}; pandoc -H templates/format.sty -o out/$(unit)/$$fname.pdf build/doc/$$fname; done
 
 

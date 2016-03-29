@@ -131,7 +131,6 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
     items_list = list(yaml.load_all(body))
     questions = process_questions(items_list)
     context = {}
-    random_orders = {}
 
     # Process includes
     if 'include' in metadata.keys():
@@ -146,11 +145,9 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
     for key,val in metadata.items():
         if isinstance(key, str):
             context[key] = val
-    # Begin new code added on 2016-03-28:
     for var in v:
         key,val = var.split(":")
         context[key] = val
-    # End new code added on 2016-03-28:
 
     # Process some settings
     if 'omit' not in metadata.keys():
@@ -168,37 +165,9 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
         do_log('running preprocess stage: {}'.format(metadata['preprocess']))
         os.system(metadata['preprocess'])
 
-    # Loop through builds
-#    build_i = 0
-#    for build in metadata['build']:
-#        if 'filename' in build.keys():
-#            build_name = build['filename']
-#        else:
-#            build_name = str(build_i)
-#        if not build.has_key('question_order'):
-#            build['question_order'] = ['natural']
-#        elif isinstance(build['question_order'], str):
-#            build['question_order'] = [build['question_order']]
-#
-#        if not build.has_key('answer_order'):
-#            build['answer_order'] = 'natural'
-#        if isinstance(build['answer_order'], str):
-#            aorder = build['answer_order']
-#            build['answer_order'] = []
-#            for order in build['question_order']:
-#                build['answer_order'].append(aorder)
-
-#    if 'preprocess' in build.keys() and build['preprocess'] is not 'None':
-#        do_log('Build: {}; running preprocess stage: {}'.format(build_name, build['preprocess']))
-#        os.system(build['preprocess'])
-
-#        # Loop through versions
-#        version_i = 0
-#        for version in build['question_order']:
-    version_name = version_options[version_i]
     out_questions = []
     question_order = q
-    context['version'] = version_name
+
     if question_order.lower() == 'natural':
         do_log("Question order: Natural")
         question_order_n = np.arange(len(items_list))
@@ -220,24 +189,22 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
     if 0 not in question_order_n:
         question_order_n = question_order_n - 1
 
-    if build['answer_order'][version_i] == 'random':
-        do_log("Answer order: Random")
-        answer_order_n = np.zeros((len(items_list), 26), dtype=np.int32)
-        for n in np.arange(len(items_list)):
-            answer_order = np.arange(26)
-            np.random.shuffle(answer_order)
-            answer_order_n[n] = answer_order
-    elif os.path.isfile(build['answer_order'][version_i]):
-        do_log("Question order: Specified by file {}".format(build['answer_order'][version_i]))
-        answer_order_n = np.loadtxt(build['answer_order'][version_i], dtype=np.int32)
+    if os.path.isfile(a):
+        do_log("Question order: Specified by file {}".format(a))
+        answer_order_n = np.loadtxt(a, dtype=np.int32)
     else:
-        do_log("Answer order: Natural")
+        if a.lower() == 'random':
+            do_log("Answer order: Random")
+        else:
+            do_log("Answer order: Natural")
         answer_order_n = np.zeros((len(items_list), 26), dtype=np.int32)
         for n in np.arange(len(items_list)):
             answer_order = np.arange(26)
+            if a.lower() == 'random':
+                np.random.shuffle(answer_order)
             answer_order_n[n] = answer_order
 
-    question_i = 0
+
     for i in question_order_n:
         in_question = questions[i]
         if in_question in metadata['omit']:
@@ -287,11 +254,11 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
         question_i += 1
     context['questions'] = out_questions
 
-#    for filename,template in build.get("template", []).iteritems():
-#        context['filename'] = os.path.join(dest,"{}_v{:}.md".format(filename, version_i))
     template = t
     filename = o
-    if os.path.isfile(template):
+    if not os.path.isfile(template):
+        raise IOError("*** Template not found: {}".format(template))
+    else:
         do_log("Using template: {}".format(template))
         tpath,tfname = os.path.split(template)
         template_environment = jinja2.Environment(autoescape=False,
@@ -301,8 +268,8 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
 
         markdown = template_environment.get_template(tfname).render(context)
 
-        if build.has_key('appendix') and build['appendix'] is not None:
-            do_log("Adding appendix: {}".format(build['appendix']))
+        if metadata.has_key('appendix') and metadata['appendix'] is not None:
+            do_log("Adding appendix: {}".format(metadata['appendix']))
             appendix = open(build['appendix'], 'r').read()
             markdown += appendix
 
@@ -325,8 +292,13 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
 #        build_i += 1
 
     if 'postprocess' in metadata.keys() and metadata['postprocess'] is not None:
-        do_log('running postprocess stage: {}'.format(metadata['postprocess']))
+        do_log('Running postprocess stage: {}'.format(metadata['postprocess']))
         os.system(metadata['postprocess'])
+
+
+
+
+
 
 
 def str_to_range(s):
