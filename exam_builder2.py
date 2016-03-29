@@ -16,24 +16,6 @@
 """
 
 """
-TODO: Move the entire build section out of the yaml header and to command 
-line input args. So the header should be just jinja2 vars, and there 
-should be an easy way to specify other vars as input args as well. 
-
-It should look something like:
-
-exam_builder -o doc/Unit5_Exam -t lib/templates/mc_exam.template -q build/q_order_v0.txt
-
-...etc.
-
-Remember to do something with the out dir. Right now, it is very Goldbergian, where
-out is specified in the makefile, but the subs are specified in the yaml. 
-
-Also, just remove preprocess, as it is unnecessary and cumbersome to call from within 
-exam_builder. Much better to just call the preprocess script from the makefile as needed. 
-"""
-
-"""
 TODO: Add topics feature, where each question can belong to one or more topics, 
 and then the user can specify which topics to include in an exam, and all of the 
 questions that belong to that topic will be included. Question order will probably 

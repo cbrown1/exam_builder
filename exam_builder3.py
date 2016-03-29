@@ -121,7 +121,7 @@ def process_questions(in_items):
         question_i += 1
     return out_items
 
-def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
+def main(y, t, o, q=None, a=None, v=None, m=None, l=False):
 
     # Read in file. Take first section as yml block, everything else as questions
     raw = open(y, 'r').read()
@@ -145,11 +145,13 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
     for key,val in metadata.items():
         if isinstance(key, str):
             context[key] = val
-    for var in v:
-        key,val = var.split(":")
-        context[key] = val
+    if v:
+        for var in v:
+            key,val = var.split(":")
+            context[key] = val
 
     # Process some settings
+    # TODO: m is omit string input arg
     if 'omit' not in metadata.keys():
         metadata['omit'] = []
     elif isinstance(metadata['omit'], str):
@@ -159,8 +161,6 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
     else:
         answer_options = "".join([chr(c) for c in np.arange(26)+97])
 
-#    version_options = "".join([chr(c) for c in np.arange(26)+65])
-
     if 'preprocess' in metadata.keys() and metadata['preprocess'] is not None:
         do_log('running preprocess stage: {}'.format(metadata['preprocess']))
         os.system(metadata['preprocess'])
@@ -168,14 +168,14 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
     out_questions = []
     question_order = q
 
-    if question_order.lower() == 'natural':
+    if not question_order or (question_order and question_order.lower() == 'natural'):
         do_log("Question order: Natural")
         question_order_n = np.arange(len(items_list))
-    elif question_order.lower() == 'random':
+    elif question_order and question_order.lower() == 'random':
         do_log("Question order: Random")
         question_order_n = np.arange(len(items_list))
         np.random.shuffle(question_order_n)
-    elif os.path.isfile(question_order):
+    elif question_order and os.path.isfile(question_order):
         do_log("Question order: Specified by file {}".format(question_order))
         question_order_n = np.loadtxt(question_order, dtype=np.int32)
     else:
@@ -189,22 +189,22 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
     if 0 not in question_order_n:
         question_order_n = question_order_n - 1
 
-    if os.path.isfile(a):
+    if a and os.path.isfile(a):
         do_log("Question order: Specified by file {}".format(a))
         answer_order_n = np.loadtxt(a, dtype=np.int32)
     else:
-        if a.lower() == 'random':
+        if a and a.lower() == 'random':
             do_log("Answer order: Random")
         else:
             do_log("Answer order: Natural")
         answer_order_n = np.zeros((len(items_list), 26), dtype=np.int32)
         for n in np.arange(len(items_list)):
             answer_order = np.arange(26)
-            if a.lower() == 'random':
+            if a and a.lower() == 'random':
                 np.random.shuffle(answer_order)
             answer_order_n[n] = answer_order
 
-
+    question_i = 0
     for i in question_order_n:
         in_question = questions[i]
         if in_question in metadata['omit']:
@@ -255,7 +255,7 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
     context['questions'] = out_questions
 
     template = t
-    filename = o
+    context['filename'] = o
     if not os.path.isfile(template):
         raise IOError("*** Template not found: {}".format(template))
     else:
@@ -284,12 +284,7 @@ def main(y, t, o, q=None, a=None, v=None, o=None, l=False):
 
         with open(context['filename'], 'w') as f:
             f.write(markdown.encode('utf8'))
-    else:
-        raise IOError("*** Template not found: {}".format(template))
 
-#    version_i += 1
-#
-#        build_i += 1
 
     if 'postprocess' in metadata.keys() and metadata['postprocess'] is not None:
         do_log('Running postprocess stage: {}'.format(metadata['postprocess']))
@@ -392,4 +387,4 @@ if __name__ == "__main__":
     m = args.omit
     l = args.log
 
-    main(y, t, o, q, a, v, o, l)
+    main(y, t, o, q, a, v, m, l)
