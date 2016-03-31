@@ -28,10 +28,48 @@ import numpy as np
 import yaml
 import jinja2
 
-log = False
 
-def process_questions(in_items):
+def read_yaml(yaml_file):
+    # Read in file. Take first section as yml block, everything else as questions
+    raw = open(yaml_file, 'r').read()
+    preamble = raw.split('---')[0]
+    if raw.find('---') == -1:
+        body = ""
+    else:
+        body = raw.split('---', 1)[1]
+    return preamble, body
 
+def process_includes(metadata, body, inc_cl):
+    includes = []
+    if 'include' in metadata.keys():
+        if isinstance(metadata['include'], str):
+            metadata['include'] = [metadata['include']]
+        for inc in metadata.get("include", []):
+            if os.path.isfile(inc):
+                do_log('including file [metadata]: {}'.format(inc))
+                includes.append(inc)
+            else:
+                do_log('include file not found [metadata]: {}'.format(inc))
+    if inc_cl:
+        for inc in inc_cl:
+            if os.path.isfile(inc):
+                do_log('including file [command line]: {}'.format(inc))
+                includes.append(inc)
+            else:
+                do_log('include file not found [command line]: {}'.format(inc))
+
+    for inc in includes:
+        inc_meta, inc_body = read_yaml(inc)
+        if inc_meta and not inc_meta.isspace():
+            metadata.update(yaml.load(inc_meta))
+        if inc_body != "":
+            body = "\n\n---".join([body, inc_body])
+
+    return metadata, body
+
+def process_body(body):
+
+    in_items = list(yaml.load_all(body))
     out_items = []
     answer_options = "".join([chr(c) for c in np.arange(26)+97])
     question_i = 0
@@ -68,46 +106,31 @@ def process_questions(in_items):
         question_i += 1
     return out_items
 
-def main(yaml_file, template_file, output_file, question_order=None, a=None, variables=None, m=None, includes=None, l=False):
+def process_question_order(questions, question_order, question_order_to_file=None):
+    if not question_order or (question_order and question_order.lower() == 'natural'):
+        do_log("Question order: Natural")
+        question_order_n = np.arange(len(questions))
+    elif question_order and question_order.lower() == 'random':
+        do_log("Question order: Random")
+        question_order_n = np.arange(len(questions))
+        np.random.shuffle(question_order_n)
+    elif question_order and os.path.isfile(question_order):
+        do_log("Question order: Specified by file {}".format(question_order))
+        question_order_n = np.loadtxt(question_order, dtype=np.int32)
+    else:
+        do_log("Question order: Specified by string {}".format(question_order))
+        question_order_n = str_to_range(question_order)
+    if 0 not in question_order_n:
+        question_order_n = question_order_n - 1
 
-    global log
-    log = l
+    if question_order_to_file:
+        do_log("Writing question order to file: {}".format(question_order_to_file))
+        np.savetxt(question_order_to_file, question_order_n, fmt='%i')
 
-    # Read in file. Take first section as yml block, everything else as questions
-    raw = open(yaml_file, 'r').read()
-    preamble = raw.split('---')[0]
-    metadata = yaml.load(preamble)
-    body = raw.replace(preamble, '')
-    items_list = list(yaml.load_all(body))
-    questions = process_questions(items_list)
-    context = {}
+    return question_order_n
 
-    # Process includes
-    if 'include' in metadata.keys():
-        if isinstance(metadata['include'], str):
-            metadata['include'] = [metadata['include']]
-        for inc in metadata.get("include", []):
-            if os.path.isfile(inc):
-                do_log('including file [metadata]: {}'.format(inc))
-                metadata.update(yaml.load(open(inc)))
-            else:
-                do_log('include file not found [metadata]: {}'.format(inc))
-    if includes:
-        for inc in includes:
-            if os.path.isfile(inc):
-                do_log('including file [command line]: {}'.format(inc))
-                metadata.update(yaml.load(open(inc)))
-            else:
-                do_log('include file not found [command line]: {}'.format(inc))
 
-    # Add variables to the jinja2 context
-    for key,val in metadata.items():
-        if isinstance(key, str):
-            context[key] = val
-    if variables:
-        for var in variables:
-            key,val = var.split(":")
-            context[key] = val
+def process_questions(questions, metadata, question_order_n=None, a=None, m=None, includes=None):
 
 #    # Process some settings
 #    # TODO: m is omit string input arg
@@ -122,27 +145,6 @@ def main(yaml_file, template_file, output_file, question_order=None, a=None, var
 
     out_questions = []
 
-    if not question_order or (question_order and question_order.lower() == 'natural'):
-        do_log("Question order: Natural")
-        question_order_n = np.arange(len(items_list))
-    elif question_order and question_order.lower() == 'random':
-        do_log("Question order: Random")
-        question_order_n = np.arange(len(items_list))
-        np.random.shuffle(question_order_n)
-    elif question_order and os.path.isfile(question_order):
-        do_log("Question order: Specified by file {}".format(question_order))
-        question_order_n = np.loadtxt(question_order, dtype=np.int32)
-    else:
-        do_log("Question order: Specified by string {}".format(question_order))
-        question_order_n,store = str_to_range(question_order)
-        if store:
-            if random_orders.has_key(store):
-                question_order_n = random_orders[store]
-            else:
-                random_orders[store] = question_order_n
-    if 0 not in question_order_n:
-        question_order_n = question_order_n - 1
-
     if a and os.path.isfile(a):
         do_log("Question order: Specified by file {}".format(a))
         answer_order_n = np.loadtxt(a, dtype=np.int32)
@@ -151,8 +153,8 @@ def main(yaml_file, template_file, output_file, question_order=None, a=None, var
             do_log("Answer order: Random")
         else:
             do_log("Answer order: Natural")
-        answer_order_n = np.zeros((len(items_list), 26), dtype=np.int32)
-        for n in np.arange(len(items_list)):
+        answer_order_n = np.zeros((len(questions), 26), dtype=np.int32)
+        for n in np.arange(len(questions)):
             answer_order = np.arange(26)
             if a and a.lower() == 'random':
                 np.random.shuffle(answer_order)
@@ -261,12 +263,26 @@ def main(yaml_file, template_file, output_file, question_order=None, a=None, var
                     if j == len(gw_inds)-1:
                         this['group_end'] = True
                     out_questions_gw.append(this)
-        context['questions'] = out_questions_gw
+        return out_questions_gw
     else:
-        context['questions'] = out_questions
+        return out_questions
     # End group_with...
 
-    context['filename'] = output_file
+def process_template(questions, metadata, template_file, variables=None):
+
+    context = {}
+
+    # Add variables
+    for key,val in metadata.items():
+        if isinstance(key, str):
+            context[key] = val
+    if variables:
+        for var in variables:
+            key,val = var.split(":")
+            context[key] = val
+
+    context['questions'] = questions
+#    context['filename'] = output_file
     if not os.path.isfile(template_file):
         raise IOError("*** Template not found: {}".format(template_file))
     else:
@@ -285,24 +301,17 @@ def main(yaml_file, template_file, output_file, question_order=None, a=None, var
             output += appendix
 
         output.decode('ascii')
+        return output
 
-        if not o:
-            do_log("No output file specified, writing to stdout")
-            return output
-        else:
-            do_log("Writing to file: {}".format(context['filename']))
+def process_output(output, output_file):
+    d = os.path.dirname(output_file)
+    if not os.path.exists(d):
+        do_log("Output path does not exist. Creating: {}".format(d))
+        os.makedirs(d)
 
-            # Don't use dest, which allows filename to contain path info
-            d = os.path.dirname(context['filename'])
-            if not os.path.exists(d):
-                os.makedirs(d)
-
-            with open(context['filename'], 'w') as f:
-                f.write(output.encode('utf8'))
-
-
-
-
+    do_log("Writing to file: {}".format(output_file))
+    with open(output_file, 'w') as f:
+        f.write(output.encode('utf8'))
 
 def str_to_range(s):
     """Translate a print-range style string to a list of integers
@@ -317,7 +326,6 @@ def str_to_range(s):
     """
     s = s.strip()
     randomize = False
-    store = None
     if s.count(":"):
         tokens = [x.strip().split(":") for x in s.split(",")]
     else:
@@ -325,8 +333,6 @@ def str_to_range(s):
 
     if tokens[0][0][0] == "r":
         randomize = True
-        if len(tokens[0][0]) > 1:
-            store = tokens[0][0][1:]
         tokens = tokens[1:]
 
     # Translate ranges and enumerations into a list of int indices.
@@ -348,7 +354,7 @@ def str_to_range(s):
     if randomize:
         np.random.shuffle(result)
 
-    return result,store
+    return result
 
 def do_log(message):
     """Writes info to the console
@@ -372,6 +378,9 @@ if __name__ == "__main__":
     parser.add_argument("-q", "--question_order", default=None, 
                         help="A file indicating the question order. File should be text, with one value per row.")
 
+    parser.add_argument("-f", "--question_order_to_file", default=None, 
+                        help="A filename to write the question order to. Useful to reuse a randomly generated order.")
+
     parser.add_argument("-a", "--answer_order", default=None, 
                         help="A file indicating the answer order. File should be text, with one row per question containing space-delimited numbers.")
 
@@ -384,6 +393,9 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--include", default=None, action='append', 
                         help="Another yaml file to include. Reuse as necessary.")
 
+    parser.add_argument("-n", "--get_n", action='store_true', default=False,
+                        help="Include to return the number of questions.")
+
     parser.add_argument("-log", "--log", action='store_true', default=False,
                         help="Include to turn on logging.")
 
@@ -393,11 +405,28 @@ if __name__ == "__main__":
     t = args.template
     o = args.output_dir
     q = args.question_order
+    f = args.question_order_to_file
     a = args.answer_order
     v = args.variable
     m = args.omit
     i = args.include
-    l = args.log
+    n = args.get_n
+    log = args.log
 
-    ret = main(y, t, o, q, a, v, m, i, l)
-    print( ret )
+    preamble, body = read_yaml(args.yaml_file)
+    metadata = yaml.load(preamble)
+    metadata, body =  process_includes(metadata, body, i)
+    questions = process_body(body)
+    q_n = process_question_order(questions, q, f)
+    ret = process_questions(questions, metadata, q_n, a, m, i)
+
+    if n:
+        print ( len(ret) )
+    else:
+        if t:
+            ret = process_template(ret, metadata, t, v)
+
+        if o:
+            ret = process_output(ret, o)
+        else:
+            print ( ret )

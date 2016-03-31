@@ -1,0 +1,28 @@
+
+---
+n: 2
+question: During World War I, which country did South Africa capture?
+group_with: wars
+answers:
+    - Rwanda
+    - Zimbabwe
+    - + Namibia
+
+---
+n: 5
+question: The Hundred Years War was fought between what two European countries? 
+group: wars
+answers:
+    - + England and France
+    - England and Spain
+    - France and Spain
+
+---
+n: 11
+question: Which country was not a German ally during World War II? 
+group_with: wars
+answers:
+    - + Russia
+    - Japan
+    - Italy
+

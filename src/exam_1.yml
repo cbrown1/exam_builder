@@ -5,61 +5,49 @@ include: [src/course.yml]
 date: March 17
 name: Unit 1 exam
 
-build:
-    # template: a dict in which the keys are the output file names and
-    # the vals are the input (template) filename. Replaces filename 
-    # and template string variables.
-    - template:
-        doc/Unit1_Exam: templates/mc_exam.template
-        doc/Unit1_Exam_key: templates/mc_key.template
-        pres/Unit1_Exam_review: templates/review_pres.template
 
-    # question_order: can be 'natural', 'random', a print-style string 
-    # ('1-5,7,10', make first item 'r' to randomize: 'r,5-10, 15-20'), 
-    # or the path to a text file with one integer per line. 
-    # Defaule = natural. Can be a list of the options above to make 
-    # multiple versions of a test.
-      question_order: random
-
-    # answer_order: can be either 'natural' 'random', or the path to a 
-    # text file, with an array of integers with dim1 = the number of 
-    # questions, and dim2 = the number of possible answers. If you  
-    # specify a list, it should be the same size as question_order. You
-    # can specify a string and if question_order is a list, the same 
-    # answer_order will be used for eacy.  
-    # Default = natural
-      answer_order: natural
-
-# A script or other function to call prior to processing. Useful for 
-# creating figures, etc.
+# Required Parameters:
 # 
-#preprocess: python2.7 src/Unit1_Preprocess.py
-#
-
-# Each item has one required parameter: 'question' which should be a string
-# Each item has one optional parameter of one of: "answer" | "answers" | ""
-# "answer" should be a yaml string. Item treated as short-answer; string 
-#           will show up on key but not on exam
-# "answers" should be a yaml list. Treated as multiple choice, with each 
-#           list item an option and the one prepended with a + is the
-#           correct answer (for the key). Example:
-#    - answer 1
-#    - answer 2
-#    - + answer 3 is correct
-#"": If neither answer nor answers is given, the item is treated as an essay 
-#    question, and no answer shows up on exam or key
+# question : str
+#     The text body of a question
+# 
+# Optional Parameters
+# 
+# answer | answers
+#     answer : str 
+#         Question item treated as short-answer
+#     answers : yaml list of strings
+#         Question item treated as multiple choice, with each list  
+#         item an option and the one prepended with a + is the 
+#         correct answer (for the key). Example:
+#         answers:
+#             - answer 1
+#             - answer 2
+#             - + answer 3 is correct
+# 
+# group_with & group: str
+#     group_with is the name of a group near which the question 
+#     should be placed. The idea is that sometimes several questions 
+#     should follow one another (eg., they all refer to the same figure).  
+#     All questions with the same "group_with" name will immediately 
+#     follow the the first question found that has this "group" name.  
+# 
+#     Example:
+# 
+#     
+#     question: Given the diagram above...
+#     answer: no
+#     group_with: anatomy # This item will follow an item with group: anatomy
+# 
+#     
+#     question: Given the diagram above...
+#     answer: yes
+#     group: anatomy
+#     image: anatomy-diagram.svg
 
 ---
 # n is a custom parameter
 n: 1
-question: The Hundred Years War was fought between what two European countries? 
-answers:
-    - + England and France
-    - England and Spain
-    - France and Spain
-
----
-n: 2
 question: What famous American was presented with the Medal of Freedom by President John F. Kennedy in 1963? 
 answers:
     - + Ralph Bunche
@@ -83,7 +71,7 @@ answers:
     - + Incas
 
 ---
-n: 5
+n: 6
 question: The Aztec capital was founded around 1325 in central Mexico and was called what?  
 answers:
     - Huitzilopochti
@@ -91,20 +79,12 @@ answers:
     - + Tenochtitlan
 
 ---
-n: 6
+n: 7
 question: Which letter is used to represent 100 in Roman numerals? 
 answers:
     - M
     - + C
     - D
-
----
-n: 7
-question: During World War I, which country did South Africa capture?
-answers:
-    - Rwanda
-    - Zimbabwe
-    - + Namibia
 
 ---
 n: 8
@@ -129,4 +109,3 @@ answers:
     - + Darwin
     - Townsville
     - Cairns
-
