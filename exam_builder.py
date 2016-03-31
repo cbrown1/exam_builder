@@ -426,7 +426,9 @@ if __name__ == "__main__":
         if t:
             ret = process_template(ret, metadata, t, v)
 
-        if o:
-            ret = process_output(ret, o)
+            if o:
+                ret = process_output(ret, o)
+            else:
+                print ( ret )
         else:
             print ( ret )
