@@ -275,12 +275,12 @@ def process_template(questions, metadata, template_file, variables=None, appendi
     # Add variables
     for key,val in metadata.items():
         if isinstance(key, str):
-        	do_log("Adding variable [metadata]: var: {}; val: {}".format(key, val))
+            do_log("Adding variable [metadata]: var: {}; val: {}".format(key, val))
             context[key] = val
     if variables:
         for var in variables:
             key,val = var.split(":")
-        	do_log("Adding variable [command line]: var: {}; val: {}".format(key, val))
+            do_log("Adding variable [command line]: var: {}; val: {}".format(key, val))
             context[key] = val
 
     context['questions'] = questions
