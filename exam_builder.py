@@ -268,17 +268,19 @@ def process_questions(questions, metadata, question_order_n=None, a=None, m=None
         return out_questions
     # End group_with...
 
-def process_template(questions, metadata, template_file, variables=None):
+def process_template(questions, metadata, template_file, variables=None, appendix=None):
 
     context = {}
 
     # Add variables
     for key,val in metadata.items():
         if isinstance(key, str):
+        	do_log("Adding variable [metadata]: var: {}; val: {}".format(key, val))
             context[key] = val
     if variables:
         for var in variables:
             key,val = var.split(":")
+        	do_log("Adding variable [command line]: var: {}; val: {}".format(key, val))
             context[key] = val
 
     context['questions'] = questions
@@ -296,8 +298,13 @@ def process_template(questions, metadata, template_file, variables=None):
         output = template_environment.get_template(tfname).render(context)
 
         if metadata.has_key('appendix') and metadata['appendix'] is not None:
-            do_log("Adding appendix: {}".format(metadata['appendix']))
-            appendix = open(build['appendix'], 'r').read()
+            do_log("Adding appendix [metadata]: {}".format(metadata['appendix']))
+            appendix = open(metadata['appendix'], 'r').read()
+            output += appendix
+
+        if appendix:
+            do_log("Adding appendix [command line]: {}".format(appendix))
+            appendix = open(appendix, 'r').read()
             output += appendix
 
         output.decode('ascii')
@@ -375,6 +382,9 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output_dir",
                         help="output directory.")
 
+    parser.add_argument("-p", "--appendix", default=None, 
+                        help="A file containing content to be added at the end. File should be text, and formated as needed (markdown, etc).")
+
     parser.add_argument("-q", "--question_order", default=None, 
                         help="A file indicating the question order. File should be text, with one value per row.")
 
@@ -391,7 +401,7 @@ if __name__ == "__main__":
                         help="A comma-delimited list of question numbers to omit.")
 
     parser.add_argument("-i", "--include", default=None, action='append', 
-                        help="Another yaml file to include. Reuse as necessary.")
+                        help="Another yaml file to include. Can include metadata or questions. Each question must be preceeded by a delimiter (---). Reuse as necessary.")
 
     parser.add_argument("-n", "--get_n", action='store_true', default=False,
                         help="Include to return the number of questions.")
@@ -403,6 +413,7 @@ if __name__ == "__main__":
 
     y = args.yaml_file
     t = args.template
+    p = args.appendix
     o = args.output_dir
     q = args.question_order
     f = args.question_order_to_file
@@ -424,7 +435,7 @@ if __name__ == "__main__":
         print ( len(ret) )
     else:
         if t:
-            ret = process_template(ret, metadata, t, v)
+            ret = process_template(ret, metadata, t, v, p)
 
             if o:
                 ret = process_output(ret, o)
