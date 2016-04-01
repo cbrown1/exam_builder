@@ -299,13 +299,13 @@ def process_template(questions, metadata, template_file, variables=None, appendi
 
         if metadata.has_key('appendix') and metadata['appendix'] is not None:
             do_log("Adding appendix [metadata]: {}".format(metadata['appendix']))
-            appendix = open(metadata['appendix'], 'r').read()
-            output += appendix
+            appendix_str = open(metadata['appendix'], 'r').read()
+            output += appendix_str
 
         if appendix:
             do_log("Adding appendix [command line]: {}".format(appendix))
-            appendix = open(appendix, 'r').read()
-            output += appendix
+            appendix_str = open(appendix, 'r').read()
+            output += appendix_str
 
         output.decode('ascii')
         return output
