@@ -130,7 +130,7 @@ def process_question_order(questions, question_order, question_order_to_file=Non
     return question_order_n
 
 
-def process_questions(questions, metadata, question_order_n=None, a=None, m=None, includes=None):
+def process_questions(questions, metadata, question_order_n=None, a=None, m=None):
 
 #    # Process some settings
 #    # TODO: m is omit string input arg
@@ -429,7 +429,7 @@ if __name__ == "__main__":
     metadata, body =  process_includes(metadata, body, i)
     questions = process_body(body)
     q_n = process_question_order(questions, q, f)
-    ret = process_questions(questions, metadata, q_n, a, m, i)
+    ret = process_questions(questions, metadata, q_n, a, m)
 
     if n:
         print ( len(ret) )
