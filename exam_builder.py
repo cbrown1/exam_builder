@@ -373,14 +373,14 @@ def do_log(message):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = "Simple script to help building exams")
-    parser.add_argument("-y", "--yaml_file",
+    parser.add_argument("yaml_file",
                         help="the path to a yaml file representing exam data")
 
     parser.add_argument("-t", "--template", 
                         help="The template to use.")
 
-    parser.add_argument("-o", "--output_dir",
-                        help="output directory.")
+    parser.add_argument("-o", "--output_file",
+                        help="The output file name to write to.")
 
     parser.add_argument("-p", "--appendix", default=None, 
                         help="A file containing content to be added at the end. File should be text, and formated as needed (markdown, etc).")
@@ -414,7 +414,7 @@ if __name__ == "__main__":
     y = args.yaml_file
     t = args.template
     p = args.appendix
-    o = args.output_dir
+    o = args.output_file
     q = args.question_order
     f = args.question_order_to_file
     a = args.answer_order
